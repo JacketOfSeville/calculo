@@ -30,13 +30,11 @@ class TrabalhoModel {
 
   TrabalhoModel();
 
-  // Carregar dados do arquivo JSON
   void carregarTrabalhos(String jsonData) {
     List<dynamic> jsonList = jsonDecode(jsonData);
     trabalhos = jsonList.map((json) => Trabalho.fromJson(json)).toList();
   }
 
-  // Retorna os trabalhos para G1
   List<Trabalho> getTrabalhosPorPeriodo(String periodo) {
     return trabalhos
         .where((t) => t.periodo == periodo && t.tipo == 'Tarefas')

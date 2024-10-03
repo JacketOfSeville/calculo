@@ -1,16 +1,11 @@
-# calculo
+# com.calculo.atividade.calculo
 
-Calculo
+Aplicativo para Cálculo de Notas para atividade de Desenvolvimento para Dispositivos Móveis.
 
-## Getting Started
+Projeto em Flutter
 
-This project is a starting point for a Flutter application.
+## Compilando e abrindo
 
-A few resources to get you started if this is your first Flutter project:
+Você pode compilar o app com `flutter build apk`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Você pode reproduzir o app com `flutter run` ou instalar com `flutter install`

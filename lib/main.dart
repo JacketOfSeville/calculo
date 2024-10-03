@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'viewmodel.dart';
-import 'dart:convert'; // Para simular a leitura do JSON
+// import 'dart:convert';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -46,7 +46,7 @@ class _NotaScreenState extends State<NotaScreen> {
   void initState() {
     super.initState();
     _viewModel.carregarDados(jsonData);
-    // Criar controllers para as notas
+
     for (var i = 0; i < 4; i++) {
       _notasTrabalhosControllers.add(TextEditingController());
     }

@@ -1,13 +1,12 @@
 import 'model.dart';
 
 class TrabalhoViewModel {
-  TrabalhoModel _model = TrabalhoModel();
+  final TrabalhoModel _model = TrabalhoModel();
 
   void carregarDados(String jsonData) {
     _model.carregarTrabalhos(jsonData);
   }
 
-  // Calcula a média ponderada dos trabalhos
   double calcularMediaTrabalhos(String periodo, List<double> notas) {
     List<Trabalho> trabalhos = _model.getTrabalhosPorPeriodo(periodo);
     double somaPesos =
@@ -21,7 +20,6 @@ class TrabalhoViewModel {
     return somaNotas / somaPesos;
   }
 
-  // Calcula a nota final
   double calcularNotaFinal(
       double notaProva, double mediaTrabalhos, String periodo) {
     Trabalho trabalhoFinal = _model.getTrabalhoFinal(periodo);
