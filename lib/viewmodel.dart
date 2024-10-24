@@ -25,4 +25,14 @@ class TrabalhoViewModel {
     Trabalho trabalhoFinal = _model.getTrabalhoFinal(periodo);
     return mediaTrabalhos + ((notaProva / 10) * trabalhoFinal.peso);
   }
+
+  List<Map<String, dynamic>> buscarTarefasPorNome(String query) {
+    List<Trabalho> tarefas = _model.trabalhos
+        .where((t) => t.titulo.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    return tarefas
+        .map((t) => {'titulo': t.titulo, 'peso': t.peso})
+        .toList();
+  }
 }
