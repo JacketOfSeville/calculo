@@ -7,12 +7,13 @@ class Trabalho {
   int peso;
   String periodo;
 
-  Trabalho(
-      {required this.tipo,
-      required this.titulo,
-      required this.tituloResumido,
-      required this.peso,
-      required this.periodo});
+  Trabalho({
+    required this.tipo,
+    required this.titulo,
+    required this.tituloResumido,
+    required this.peso,
+    required this.periodo,
+  });
 
   factory Trabalho.fromJson(Map<String, dynamic> json) {
     return Trabalho(
@@ -23,7 +24,19 @@ class Trabalho {
       periodo: json['periodo'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'tipo': tipo,
+      'titulo': titulo,
+      'tituloResumido': tituloResumido,
+      'peso': peso,
+      'periodo': periodo,
+    };
+  }
 }
+
+
 
 class TrabalhoModel {
   List<Trabalho> trabalhos = [];

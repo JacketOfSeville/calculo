@@ -1,12 +1,17 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'viewmodel.dart';
+import 'package:provider/provider.dart';  // Import para usar o Provider
+import 'viewmodel.dart';  // Import do TrabalhoViewModel
+import 'model.dart';  // Import dos modelos de dados
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => TrabalhoViewModel(), // Criando a instância do TrabalhoViewModel
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -14,8 +19,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: NotaScreen(),
+    return MaterialApp(
+      title: 'Lista de Tarefas',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const NotaScreen(), // Tela inicial
     );
   }
 }
@@ -28,211 +37,148 @@ class NotaScreen extends StatefulWidget {
 }
 
 class _NotaScreenState extends State<NotaScreen> {
-  final TrabalhoViewModel _viewModel = TrabalhoViewModel();
-  final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _notaProvaController = TextEditingController();
-  final List<TextEditingController> _notasTrabalhosControllers = [];
-  final TextEditingController _searchController = TextEditingController();
-
-  Map<String, dynamic>? _resultadoBusca;
-
-  // JSON de exemplo
-  String jsonData = '''
-  [
-    {"tipo": "Tarefas", "titulo": "Tarefa - Mapa Mental", "tituloResumido": "Mapa Mental", "peso": 1, "periodo": "G1"},
-    {"tipo": "Tarefas", "titulo": "Praticando Git", "tituloResumido": "Praticando Git", "peso": 2, "periodo": "G1"},
-    {"tipo": "Tarefas", "titulo": "Cadastro de Potenciais Clientes", "tituloResumido": "Cadastro de Potenciais Clientes", "peso": 3, "periodo": "G1"},
-    {"tipo": "Tarefas", "titulo": "Aplicativo para calcular a nota", "tituloResumido": "Aplicativo para calcular a nota", "peso": 4, "periodo": "G1"},
-    {"tipo": "Trabalho Final", "titulo": "Sprint 4 - Review - Avaliação G1", "peso": 7, "periodo": "G1"}
-  ]
-  ''';
-
   @override
   void initState() {
     super.initState();
-    _viewModel.carregarDados(jsonData);
-    for (var i = 0; i < 4; i++) {
-      _notasTrabalhosControllers.add(TextEditingController());
+    // Carregar os dados ao inicializar a tela
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Provider.of<TrabalhoViewModel>(context, listen: false).carregarDados();
+    });
+  }
+
+  // Função para editar a tarefa
+  void _editarTarefa(int index) async {
+    final tarefa = Provider.of<TrabalhoViewModel>(context, listen: false).trabalhos[index];
+    await _exibirDialogoEdicao(
+      tipo: tarefa.tipo,
+      titulo: tarefa.titulo,
+      tituloResumido: tarefa.tituloResumido,
+      peso: tarefa.peso.toString(),
+      periodo: tarefa.periodo,
+      onSave: (novaTarefa) async {
+        await Provider.of<TrabalhoViewModel>(context, listen: false)
+            .atualizarTarefa(index, novaTarefa); // Atualiza a tarefa no viewModel
+      },
+    );
+  }
+
+  // Função para adicionar uma nova tarefa
+  Future<void> _adicionarTarefa() async {
+    await _exibirDialogoEdicao(
+      tipo: '',
+      titulo: '',
+      tituloResumido: '',
+      peso: '1',
+      periodo: '',
+      onSave: (novaTarefa) async {
+        await Provider.of<TrabalhoViewModel>(context, listen: false)
+            .adicionarTarefa(novaTarefa); // Adiciona a nova tarefa no viewModel
+      },
+    );
+  }
+
+  // Função comum para exibir o dialog de edição
+  Future<void> _exibirDialogoEdicao({
+    required String tipo,
+    required String titulo,
+    required String tituloResumido,
+    required String peso,
+    required String periodo,
+    required Function(Trabalho) onSave,
+  }) async {
+    final tipoController = TextEditingController(text: tipo);
+    final tituloController = TextEditingController(text: titulo);
+    final tituloResumidoController = TextEditingController(text: tituloResumido);
+    final pesoController = TextEditingController(text: peso);
+    final periodoController = TextEditingController(text: periodo);
+
+    final novaTarefa = await showDialog<Trabalho>(context: context, builder: (context) {
+      return AlertDialog(
+        title: const Text('Editar Tarefa'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: tipoController, decoration: const InputDecoration(labelText: 'Tipo')),
+            TextField(controller: tituloController, decoration: const InputDecoration(labelText: 'Título')),
+            TextField(controller: tituloResumidoController, decoration: const InputDecoration(labelText: 'Título Resumido')),
+            TextField(controller: pesoController, decoration: const InputDecoration(labelText: 'Peso')),
+            TextField(controller: periodoController, decoration: const InputDecoration(labelText: 'Período')),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              final tarefaEditada = Trabalho(
+                tipo: tipoController.text,
+                titulo: tituloController.text,
+                tituloResumido: tituloResumidoController.text,
+                peso: int.tryParse(pesoController.text) ?? 1,
+                periodo: periodoController.text,
+              );
+              Navigator.pop(context, tarefaEditada);
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      );
+    });
+
+    if (novaTarefa != null) {
+      await onSave(novaTarefa);  // Salva as alterações
     }
   }
 
-  @override
-  void dispose() {
-    _nomeController.dispose();
-    _notaProvaController.dispose();
-    _notasTrabalhosControllers.forEach((controller) => controller.dispose());
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  // Salva os registros de um aluno (nome, notaFinal e timestamp)
-  Future<void> _salvarInformacoes(String nome, double notaFinal) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String timestamp = DateTime.now().toString();
-
-    // Obtém todos os registros salvos anteriormente
-    String? registrosJson = prefs.getString('registros');
-    Map<String, dynamic> registros = registrosJson != null
-        ? jsonDecode(registrosJson)
-        : {};
-
-    // Adiciona ou atualiza o registro do aluno
-    registros[nome] = {
-      'nota_final': notaFinal.toString(),
-      'timestamp': timestamp
-    };
-
-    // Salva todos os registros de volta no SharedPreferences
-    await prefs.setString('registros', jsonEncode(registros));
-  }
-
-  // Função para buscar um registro pelo nome
-  Future<void> _buscarPorNome(String nome) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? registrosJson = prefs.getString('registros');
-
-    if (registrosJson != null) {
-      Map<String, dynamic> registros = jsonDecode(registrosJson);
-
-      // Busca o nome fornecido nos registros
-      if (registros.containsKey(nome)) {
-        setState(() {
-          _resultadoBusca = registros[nome];
-        });
-      } else {
-        setState(() {
-          _resultadoBusca = null;
-        });
-      }
-    }
+  // Função para deletar a tarefa
+  void _deletarTarefa(int index) async {
+    await Provider.of<TrabalhoViewModel>(context, listen: false).removerTarefa(index); // Remove a tarefa do viewModel
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cálculo de Notas'),
-      ),
-      body: SingleChildScrollView(  // Permite a rolagem sem transbordar
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const Text('Informe o Nome', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextField(
-                controller: _nomeController,
-                decoration: const InputDecoration(labelText: 'Nome'),
-              ),
-              const SizedBox(height: 20),
-              const Text('Notas dos Trabalhos',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ..._buildTrabalhosFields(),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _notaProvaController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Nota da Prova (G1)'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _calcularNotas,
-                child: const Text('Calcular Nota Final'),
-              ),
-              const SizedBox(height: 20),
-              const Text('Buscar Registro pelo Nome'),
-              TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(labelText: 'Buscar pelo nome'),
-              ),
-              ElevatedButton(
-                onPressed: () => _buscarPorNome(_searchController.text),
-                child: const Text('Buscar'),
-              ),
-              const SizedBox(height: 20),
-              _buildResultadoBusca(),
-            ],
+        title: const Text('Lista de Tarefas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _adicionarTarefa, // Botão para adicionar nova tarefa
           ),
-        ),
+        ],
       ),
-      resizeToAvoidBottomInset: true,  // Adicionado para evitar problemas ao abrir o teclado
-    );
-  }
-
-  List<Widget> _buildTrabalhosFields() {
-    return List.generate(_notasTrabalhosControllers.length, (index) {
-      return TextField(
-        controller: _notasTrabalhosControllers[index],
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(labelText: 'Nota do Trabalho ${index + 1}'),
-      );
-    });
-  }
-
-  Widget _buildResultadoBusca() {
-    if (_resultadoBusca == null) {
-      return const Text('Nenhum registro encontrado.');
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Nota Final: ${_resultadoBusca!['nota_final']}'),
-        Text('Timestamp: ${_resultadoBusca!['timestamp']}'),
-      ],
-    );
-  }
-
-  void _calcularNotas() {
-    String nome = _nomeController.text;
-    if (nome.isEmpty) {
-      _mostrarAlerta('Por favor, informe o nome');
-      return;
-    }
-
-    List<double> notasTrabalhos = _notasTrabalhosControllers
-        .map((controller) => double.tryParse(controller.text) ?? 0)
-        .toList();
-    double notaProva = double.tryParse(_notaProvaController.text) ?? 0;
-
-    double mediaTrabalhos =
-        _viewModel.calcularMediaTrabalhos('G1', notasTrabalhos);
-    double notaFinal =
-        _viewModel.calcularNotaFinal(notaProva, mediaTrabalhos, 'G1');
-
-    _salvarInformacoes(nome, notaFinal);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Nota Final'),
-          content: Text('Sua nota final é: ${notaFinal.toStringAsFixed(2)}'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _mostrarAlerta(String mensagem) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Atenção'),
-          content: Text(mensagem),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+      body: Consumer<TrabalhoViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.trabalhos.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return ListView.builder(
+            itemCount: viewModel.trabalhos.length,
+            itemBuilder: (context, index) {
+              final tarefa = viewModel.trabalhos[index];
+              return ListTile(
+                title: Text(tarefa.titulo),
+                subtitle: Text('Peso: ${tarefa.peso}, Período: ${tarefa.periodo}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _editarTarefa(index),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _deletarTarefa(index),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
