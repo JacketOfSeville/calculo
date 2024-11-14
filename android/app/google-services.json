@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "642329266776",
+    "project_id": "calculo-alunos",
+    "storage_bucket": "calculo-alunos.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:642329266776:android:0a04fe2daad2e07992182d",
+        "android_client_info": {
+          "package_name": "com.calculo.atividade.calculo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQoGWos5h7UxQpV03k7m8BXY8pZDoCJjc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

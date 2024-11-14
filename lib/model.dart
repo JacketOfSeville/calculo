@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 class Trabalho {
+  String? id;
   String tipo;
   String titulo;
   String tituloResumido;
@@ -8,6 +9,7 @@ class Trabalho {
   String periodo;
 
   Trabalho({
+    this.id,
     required this.tipo,
     required this.titulo,
     required this.tituloResumido,
@@ -35,8 +37,6 @@ class Trabalho {
     };
   }
 }
-
-
 
 class TrabalhoModel {
   List<Trabalho> trabalhos = [];

@@ -1,11 +1,17 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';  // Import para usar o Provider
-import 'viewmodel.dart';  // Import do TrabalhoViewModel
-import 'model.dart';  // Import dos modelos de dados
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'viewmodel.dart';
+import 'model.dart';
 
-void main() {
+void main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
     ChangeNotifierProvider(
       create: (context) => TrabalhoViewModel(), // Criando a instância do TrabalhoViewModel

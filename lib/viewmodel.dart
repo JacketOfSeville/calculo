@@ -1,83 +1,61 @@
-// ignore_for_file: avoid_print
-
 import 'model.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';  // Para usar ChangeNotifier
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class TrabalhoViewModel extends ChangeNotifier {
-  final String apiUrl = 'https://back-tarefas-bfhjb9chgee4g4at.canadacentral-01.azurewebsites.net/tarefas';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TrabalhoModel _model = TrabalhoModel();
 
   // Getter para acessar as tarefas carregadas
   List<Trabalho> get trabalhos => _model.trabalhos;
 
-  // Carregar as tarefas da API
+  // Carregar tarefas do Firestore
   Future<void> carregarDados() async {
     try {
-      final response = await http.get(Uri.parse(apiUrl));
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        _model.trabalhos = jsonList.map((json) => Trabalho.fromJson(json)).toList();
-        notifyListeners(); // Notifica a UI sobre a mudança
-      } else {
-        throw Exception('Falha ao carregar tarefas');
-      }
+      final querySnapshot = await _firestore.collection('tarefas').get();
+      _model.trabalhos = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return Trabalho.fromJson(data)..id = doc.id;
+      }).toList();
+      notifyListeners(); // Notifica a UI
     } catch (e) {
-      print('Erro: $e');
+      print('Erro ao carregar dados: $e');
     }
   }
 
   // Adicionar uma nova tarefa
   Future<void> adicionarTarefa(Trabalho novaTarefa) async {
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(novaTarefa.toJson()),
-      );
-      if (response.statusCode == 201) {
-        _model.trabalhos.add(novaTarefa);  // Adiciona a tarefa localmente
-        notifyListeners();  // Notifica a UI sobre a mudança
-      } else {
-        throw Exception('Erro ao adicionar tarefa');
-      }
+      final docRef = await _firestore.collection('tarefas').add(novaTarefa.toJson());
+      novaTarefa.id = docRef.id; // Atualiza o ID localmente
+      _model.trabalhos.add(novaTarefa); 
+      notifyListeners(); 
     } catch (e) {
-      print('Erro: $e');
+      print('Erro ao adicionar tarefa: $e');
     }
   }
 
   // Atualizar uma tarefa existente
   Future<void> atualizarTarefa(int index, Trabalho tarefaAtualizada) async {
     try {
-      final response = await http.put(
-        Uri.parse('$apiUrl/$index'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(tarefaAtualizada.toJson()),
-      );
-      if (response.statusCode == 200) {
-        _model.trabalhos[index] = tarefaAtualizada;  // Atualiza a tarefa localmente
-        notifyListeners();  // Notifica a UI sobre a mudança
-      } else {
-        throw Exception('Erro ao atualizar tarefa');
-      }
+      final tarefa = _model.trabalhos[index];
+      await _firestore.collection('tarefas').doc(tarefa.id).update(tarefaAtualizada.toJson());
+      _model.trabalhos[index] = tarefaAtualizada; 
+      notifyListeners();
     } catch (e) {
-      print('Erro: $e');
+      print('Erro ao atualizar tarefa: $e');
     }
   }
 
   // Remover uma tarefa
   Future<void> removerTarefa(int index) async {
     try {
-      final response = await http.delete(Uri.parse('$apiUrl/$index'));
-      if (response.statusCode == 200) {
-        _model.trabalhos.removeAt(index);  // Remove a tarefa localmente
-        notifyListeners();  // Notifica a UI sobre a mudança
-      } else {
-        throw Exception('Erro ao remover tarefa');
-      }
+      final tarefa = _model.trabalhos[index];
+      await _firestore.collection('tarefas').doc(tarefa.id).delete();
+      _model.trabalhos.removeAt(index); 
+      notifyListeners();
     } catch (e) {
-      print('Erro: $e');
+      print('Erro ao remover tarefa: $e');
     }
   }
 }
